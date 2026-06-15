@@ -15,6 +15,14 @@ source /etc/pi-gateway/config.env
 APP_DIR=/opt/pi-gateway
 VENV=$APP_DIR/venv
 
+# ── Validate required config ───────────────────────────────
+if [[ -z "$BOT_TOKEN" ]]; then
+    die "BOT_TOKEN is empty. Edit /etc/pi-gateway/config.env first."
+fi
+if [[ -z "$ADMIN_CHAT_ID" ]]; then
+    die "ADMIN_CHAT_ID is empty. Edit /etc/pi-gateway/config.env first."
+fi
+
 # ── WARP watchdog script ──────────────────────────────────
 info "Creating WARP watchdog..."
 cat > /usr/local/bin/warp-watchdog.sh <<'WATCHDOG'
@@ -33,56 +41,98 @@ fi
 WATCHDOG
 chmod +x /usr/local/bin/warp-watchdog.sh
 
-# Cron: run watchdog every minute
-(crontab -l 2>/dev/null; echo "* * * * * /usr/local/bin/warp-watchdog.sh") | sort -u | crontab -
+# Cron: run watchdog every minute (deduplicate first)
+(crontab -l 2>/dev/null | grep -v "warp-watchdog.sh"; echo "* * * * * /usr/local/bin/warp-watchdog.sh") | crontab -
 ok "WARP watchdog installed"
 
 # ── Gateway stats helper ──────────────────────────────────
 info "Creating stats helper..."
 cat > /usr/local/bin/gw-stats.sh <<'STATS'
 #!/bin/bash
-# Output JSON stats for dashboard/bot
+set -o pipefail
+
+# Source config for interface names
+source /etc/pi-gateway/config.env 2>/dev/null
+
+# Fallback defaults if config didn't load
+: "${WAN_IFACE:=eth0}"
+
+# WARP status
 WARP_STATUS=$(warp-cli status 2>/dev/null | grep -o "Connected\|Disconnected" | head -1)
+WARP_STATUS="${WARP_STATUS:-Unknown}"
 WARP_IP=$(warp-cli warp-stats 2>/dev/null | grep "WAN IP" | awk '{print $NF}' || echo "N/A")
+WARP_IP="${WARP_IP:-N/A}"
 
-CPU=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d. -f1)
-MEM_TOTAL=$(free -m | awk '/Mem:/{print $2}')
-MEM_USED=$(free -m | awk '/Mem:/{print $3}')
-MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
-TEMP=$(vcgencmd measure_temp 2>/dev/null | cut -d= -f2 | cut -d\' -f1 || cat /sys/class/thermal/thermal_zone0/temp | awk '{printf "%.1f", $1/1000}')
-UPTIME=$(uptime -p | sed 's/up //')
+# CPU usage
+CPU=$(top -bn1 2>/dev/null | grep "Cpu(s)" | awk '{printf "%.0f", $2}' || echo "0")
 
-# Network via vnstat
-RX_TODAY=$(vnstat -i eth0 --oneline 2>/dev/null | cut -d';' -f10 || echo "N/A")
-TX_TODAY=$(vnstat -i eth0 --oneline 2>/dev/null | cut -d';' -f11 || echo "N/A")
+# Memory
+MEM_TOTAL=$(free -m 2>/dev/null | awk '/Mem:/{print $2}' || echo "0")
+MEM_USED=$(free -m 2>/dev/null | awk '/Mem:/{print $3}' || echo "0")
+if [[ "$MEM_TOTAL" -gt 0 ]]; then
+    MEM_PCT=$((MEM_USED * 100 / MEM_TOTAL))
+else
+    MEM_PCT=0
+fi
+
+# Temperature (try vcgencmd first, then sysfs)
+TEMP="0"
+if command -v vcgencmd &>/dev/null; then
+    TEMP_RAW=$(vcgencmd measure_temp 2>/dev/null | cut -d= -f2 | cut -d\' -f1)
+    [[ -n "$TEMP_RAW" ]] && TEMP="$TEMP_RAW"
+else
+    if [[ -f /sys/class/thermal/thermal_zone0/temp ]]; then
+        TEMP_RAW=$(cat /sys/class/thermal/thermal_zone0/temp)
+        TEMP=$(awk "BEGIN {printf \"%.1f\", $TEMP_RAW/1000}")
+    fi
+fi
+
+# Uptime
+UPTIME=$(uptime -p 2>/dev/null | sed 's/up //' || echo "unknown")
+
+# Network via vnstat (optional)
+RX_TODAY=$(vnstat -i "$WAN_IFACE" --oneline 2>/dev/null | cut -d';' -f10 || echo "N/A")
+TX_TODAY=$(vnstat -i "$WAN_IFACE" --oneline 2>/dev/null | cut -d';' -f11 || echo "N/A")
+RX_TODAY="${RX_TODAY:-N/A}"
+TX_TODAY="${TX_TODAY:-N/A}"
 
 # Connected clients (DHCP leases)
-CLIENTS=$(cat /var/lib/misc/dnsmasq.leases 2>/dev/null | wc -l)
+LEASES_FILE="/var/lib/misc/dnsmasq.leases"
+if [[ -f "$LEASES_FILE" ]]; then
+    CLIENTS=$(wc -l < "$LEASES_FILE" 2>/dev/null || echo "0")
+else
+    CLIENTS=0
+fi
 
 # Throughput (bytes/sec snapshot)
-RX1=$(cat /sys/class/net/eth0/statistics/rx_bytes 2>/dev/null || echo 0)
-TX1=$(cat /sys/class/net/eth0/statistics/tx_bytes 2>/dev/null || echo 0)
+RX1=$(cat /sys/class/net/"$WAN_IFACE"/statistics/rx_bytes 2>/dev/null || echo 0)
+TX1=$(cat /sys/class/net/"$WAN_IFACE"/statistics/tx_bytes 2>/dev/null || echo 0)
 sleep 1
-RX2=$(cat /sys/class/net/eth0/statistics/rx_bytes 2>/dev/null || echo 0)
-TX2=$(cat /sys/class/net/eth0/statistics/tx_bytes 2>/dev/null || echo 0)
+RX2=$(cat /sys/class/net/"$WAN_IFACE"/statistics/rx_bytes 2>/dev/null || echo 0)
+TX2=$(cat /sys/class/net/"$WAN_IFACE"/statistics/tx_bytes 2>/dev/null || echo 0)
 RX_RATE=$(( (RX2-RX1) / 1024 ))
 TX_RATE=$(( (TX2-TX1) / 1024 ))
 
-echo "{
-  \"warp\": \"$WARP_STATUS\",
-  \"warp_ip\": \"$WARP_IP\",
-  \"cpu\": $CPU,
-  \"mem_pct\": $MEM_PCT,
-  \"mem_used\": $MEM_USED,
-  \"mem_total\": $MEM_TOTAL,
-  \"temp\": $TEMP,
-  \"uptime\": \"$UPTIME\",
-  \"clients\": $CLIENTS,
-  \"rx_today\": \"$RX_TODAY\",
-  \"tx_today\": \"$TX_TODAY\",
-  \"rx_kbps\": $RX_RATE,
-  \"tx_kbps\": $TX_RATE
-}"
+# Output JSON using python for guaranteed valid JSON
+python3 -c "
+import json, sys
+data = {
+    'warp': '$WARP_STATUS',
+    'warp_ip': '$WARP_IP',
+    'cpu': int('$CPU'),
+    'mem_pct': int('$MEM_PCT'),
+    'mem_used': int('$MEM_USED'),
+    'mem_total': int('$MEM_TOTAL'),
+    'temp': '$TEMP',
+    'uptime': '$UPTIME',
+    'clients': int('$CLIENTS'),
+    'rx_today': '$RX_TODAY',
+    'tx_today': '$TX_TODAY',
+    'rx_kbps': int('$RX_RATE'),
+    'tx_kbps': int('$TX_RATE'),
+}
+print(json.dumps(data))
+"
 STATS
 chmod +x /usr/local/bin/gw-stats.sh
 ok "Stats helper ready"
@@ -96,8 +146,12 @@ from flask_socketio import SocketIO
 import threading
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+# Restrict CORS to same origin only
+socketio = SocketIO(app, cors_allowed_origins=[], async_mode="eventlet")
 PORT = int(os.environ.get("DASHBOARD_PORT", 5000))
+
+# Restrict API endpoints to AP subnet by default
+AP_SUBNET = os.environ.get("AP_SUBNET", "192.168.50.0/24")
 
 def get_stats():
     try:
@@ -117,6 +171,16 @@ def get_leases():
     except:
         pass
     return leases
+
+@app.before_request
+def restrict_subnet():
+    """Optional: restrict write operations to AP subnet."""
+    # Allow all GET requests; restrict POST to AP subnet only
+    if request.method == "POST":
+        client_ip = request.remote_addr
+        # Check if client is in AP subnet (simple prefix check for /24)
+        if not client_ip.startswith(AP_SUBNET.rsplit(".", 1)[0] + "."):
+            return jsonify({"error": "Forbidden: not on AP subnet"}), 403
 
 @app.route("/")
 def index():
@@ -155,6 +219,11 @@ def restart_service(service):
     subprocess.run(["systemctl", "restart", service])
     return jsonify({"action": f"restarted {service}"})
 
+@app.route("/api/reboot", methods=["POST"])
+def reboot_pi():
+    subprocess.Popen(["bash", "-c", "sleep 3 && reboot"])
+    return jsonify({"action": "rebooting in 3 seconds"})
+
 def push_stats():
     while True:
         socketio.emit("stats", get_stats())
@@ -182,7 +251,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BOT_TOKEN    = os.environ.get("BOT_TOKEN", "")
-ADMIN_IDS    = [int(x) for x in os.environ.get("ADMIN_CHAT_ID", "0").split(",") if x]
+ADMIN_IDS    = [int(x) for x in os.environ.get("ADMIN_CHAT_ID", "").split(",") if x.strip()]
+
+if not BOT_TOKEN:
+    raise SystemExit("BOT_TOKEN not set! Edit /etc/pi-gateway/config.env")
+
+if not ADMIN_IDS:
+    logger.warning("ADMIN_CHAT_ID is empty — no users will have admin access!")
 
 def is_admin(update: Update) -> bool:
     return update.effective_user.id in ADMIN_IDS
@@ -294,9 +369,6 @@ async def button_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         subprocess.Popen(["bash", "-c", "sleep 5 && reboot"])
 
 def main():
-    if not BOT_TOKEN:
-        logger.error("BOT_TOKEN not set! Edit /etc/pi-gateway/config.env")
-        return
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("status", cmd_status))
@@ -360,9 +432,5 @@ echo ""
 echo "  Dashboard  : http://$AP_IP:$DASHBOARD_PORT"
 echo "  Telegram   : /start your bot"
 echo ""
-echo "  ⚠  Before reboot:"
-echo "     Edit /etc/pi-gateway/config.env"
-echo "     Set BOT_TOKEN and ADMIN_CHAT_ID"
-echo ""
-echo "  Then: sudo reboot"
+echo "  Reboot to start everything: sudo reboot"
 echo ""

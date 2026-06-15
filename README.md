@@ -48,7 +48,7 @@ sudo raspi-config
 ## Step 2 — Copy files to Pi
 
 ```bash
-scp -r pi-router/ pi@<PI_IP>:~/pi-gateway/
+scp -r . pi@<PI_IP>:~/pi-gateway/
 ssh pi@<PI_IP>
 cd ~/pi-gateway
 ```
@@ -68,7 +68,6 @@ This will:
 - Set up Python venv with Flask + Telegram bot library
 - Configure WiFi AP on wlan0 (192.168.50.1)
 - Set up NAT routing through WARP tunnel
-- Install WARP watchdog (auto-reconnect every minute)
 
 ---
 
@@ -94,17 +93,11 @@ Multiple admin IDs: comma-separate them: `111,222,333`
 sudo bash 02_configure.sh
 ```
 
----
-
-## Step 6 — Copy dashboard template
-
-```bash
-sudo cp templates/dashboard.html /opt/pi-gateway/templates/
-```
+This deploys the Flask dashboard, Telegram bot, WARP watchdog, and systemd services.
 
 ---
 
-## Step 7 — Reboot
+## Step 6 — Reboot
 
 ```bash
 sudo reboot
@@ -197,11 +190,12 @@ journalctl -u pi-dashboard -n 30
 
 ---
 
-## Changing AP Password / SSID
+## Changing AP Password / SSID / Country
 
 ```bash
-sudo nano /etc/hostapd/hostapd.conf
-# Edit ssid= and wpa_passphrase=
+sudo nano /etc/pi-gateway/config.env
+# Edit AP_SSID, AP_PASS, AP_COUNTRY
+sudo bash 01_install.sh  # re-apply hostapd config
 sudo systemctl restart hostapd
 ```
 
@@ -209,7 +203,7 @@ sudo systemctl restart hostapd
 
 ## Security Notes
 
-- Dashboard has NO authentication by default. Bind to AP interface only or add Flask-Login.
+- Dashboard restricts POST API calls to the AP subnet (192.168.50.x) only. Bind to AP interface only or add Flask-Login for auth.
 - The Telegram bot checks `ADMIN_CHAT_ID` — only those IDs can control the gateway.
 - iptables rules allow forwarding only through WARP tunnel by default.
 - For production, consider UFW rules to block dashboard access from WAN side.

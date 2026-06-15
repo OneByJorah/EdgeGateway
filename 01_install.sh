@@ -1,7 +1,8 @@
 #!/bin/bash
 # ============================================================
 # Pi Gateway Installer
-# LAN = Hotspot (eth0) | WiFi = Uplink (wlan0 → AP mode: wlan1)
+# eth0 = WAN uplink from ISP router (LAN cable)
+# wlan0 = WiFi Access Point (internal hotspot)
 # All traffic tunneled via Cloudflare WARP
 # ============================================================
 set -e
@@ -17,7 +18,6 @@ die()   { echo -e "${RED}[ERR]${NC} $1"; exit 1; }
 # ── Config ────────────────────────────────────────────────
 AP_IFACE="wlan0"        # WiFi interface used as AP (internal hotspot)
 WAN_IFACE="eth0"        # LAN port = uplink from ISP router/switch
-BRIDGE_IFACE="br0"      # Optional bridge (unused here but reserved)
 
 AP_SSID="PiGateway"
 AP_PASS="SuperSecret99"   # ← Change this!
@@ -26,6 +26,7 @@ AP_IP="192.168.50.1"
 AP_SUBNET="192.168.50.0/24"
 AP_DHCP_START="192.168.50.10"
 AP_DHCP_END="192.168.50.100"
+AP_COUNTRY="US"           # ← Set your 2-letter country code (regulatory domain)
 
 WARP_MTU=1280
 DASHBOARD_PORT=5000
@@ -39,10 +40,12 @@ AP_IFACE=$AP_IFACE
 WAN_IFACE=$WAN_IFACE
 AP_SSID=$AP_SSID
 AP_PASS=$AP_PASS
+AP_CHANNEL=$AP_CHANNEL
 AP_IP=$AP_IP
 AP_SUBNET=$AP_SUBNET
 AP_DHCP_START=$AP_DHCP_START
 AP_DHCP_END=$AP_DHCP_END
+AP_COUNTRY=$AP_COUNTRY
 WARP_MTU=$WARP_MTU
 DASHBOARD_PORT=$DASHBOARD_PORT
 BOT_TOKEN=$BOT_TOKEN
@@ -59,10 +62,10 @@ ok "System updated"
 # ── Install dependencies ──────────────────────────────────
 info "Installing packages..."
 apt-get install -y -qq \
-    hostapd dnsmasq iptables iptables-persistent \
+    hostapd dnsmasq iptables iptables-persistent netfilter-persistent \
     python3 python3-pip python3-venv \
     curl wget gnupg2 lsb-release \
-    net-tools iproute2 nftables \
+    net-tools iproute2 \
     vnstat tcpdump \
     git jq bc
 ok "Packages installed"
@@ -116,9 +119,12 @@ ignore_broadcast_ssid=0
 wpa=2
 wpa_passphrase=$AP_PASS
 wpa_key_mgmt=WPA-PSK
-wpa_pairwise=TKIP
 rsn_pairwise=CCMP
-country_code=US
+country_code=$AP_COUNTRY
+ieee80211n=1
+ieee80211ac=1
+require_ht=0
+require_vht=0
 EOF
 sed -i 's|#DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
 ok "hostapd configured"
