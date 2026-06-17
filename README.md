@@ -48,9 +48,9 @@ sudo raspi-config
 ## Step 2 — Copy files to Pi
 
 ```bash
-scp -r . pi@<PI_IP>:~/pi-gateway/
+scp -r . pi@<PI_IP>:~/EdgeGateway/
 ssh pi@<PI_IP>
-cd ~/pi-gateway
+cd ~/EdgeGateway
 ```
 
 ---
@@ -74,7 +74,7 @@ This will:
 ## Step 4 — Set your Telegram credentials
 
 ```bash
-sudo nano /etc/pi-gateway/config.env
+sudo nano /etc/EdgeGateway/config.env
 ```
 
 Edit these two lines:
@@ -193,7 +193,7 @@ journalctl -u pi-dashboard -n 30
 ## Changing AP Password / SSID / Country
 
 ```bash
-sudo nano /etc/pi-gateway/config.env
+sudo nano /etc/EdgeGateway/config.env
 # Edit AP_SSID, AP_PASS, AP_COUNTRY
 sudo bash 01_install.sh  # re-apply hostapd config
 sudo systemctl restart hostapd
