@@ -1,0 +1,5 @@
+[EdgeGateway deploy attempt]
+- Repo type: Bash provisioning + static HTML dashboard (no Python/Node/Docker runtime).
+- Cannot deploy on this host without root privileges and Cloudflare WARP environment.
+- Local preview fallback: captured `templates/dashboard.html` as static file for README reference.
+Result: NOT DEPLOYABLE in this environment; documented in README.

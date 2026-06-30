@@ -1,0 +1,10 @@
+[
+  {
+    "id": "EGW-001",
+    "file": "README.md",
+    "line_range": "61-76",
+    "issue": "README omits the documented `sudo` and Cloudflare WARP client package availability requirements for initial setup.",
+    "severity": "medium",
+    "suggested_fix": "Add a Requirements note at the top of Getting Started calling out root privileges and WARP client availability."
+  }
+]
