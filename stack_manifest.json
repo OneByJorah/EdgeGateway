@@ -1,0 +1,15 @@
+{
+  "runtime": "bash + static HTML",
+  "build_method": "bash scripts + Cloudflare WARP registration",
+  "entry_point": "01_install.sh, 02_configure.sh",
+  "dependencies": ["sudo", "cloudflare-warp", "linux host (Ubuntu/Debian)"],
+  "ports": [],
+  "deploy_steps": [
+    "sudo ./01_install.sh",
+    "sudo ./02_configure.sh"
+  ],
+  "has_docker": false,
+  "has_compose": false,
+  "has_npm": false,
+  "notes": "Not deployable on this host: requires root privileges and Cloudflare WARP client registration."
+}

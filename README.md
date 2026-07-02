@@ -60,6 +60,8 @@ Setup stages:
 
 ## Getting Started
 
+**Requirements:** Linux host (Ubuntu/Debian), `sudo`, Cloudflare WARP client package availability.
+
 ```bash
 # 1. Clone the repository
 git clone https://github.com/OneByJorah/EdgeGateway.git
@@ -104,9 +106,7 @@ EdgeGateway/
 ---
 
 ## Screenshots
-
-### EdgeGateway Dashboard
-![EdgeGateway Dashboard](screenshot-dashboard.png)
+> None required for provisioning repo; dashboard template is in `templates/dashboard.html`.
 
 ---
 
