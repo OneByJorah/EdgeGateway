@@ -1,0 +1,12 @@
+repo: EdgeGateway
+class: Networking / Infrastructure
+org: OneByJorah
+owner: Jhonattan L. Jimenez
+license: MIT
+production_score: 78
+last_audit: "2026-07-05"
+standards_version: "2.1"
+dependencies: []
+deploy_target: scratch
+mesh_vpn_only: false
+public_facing: false
