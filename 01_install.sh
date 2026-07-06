@@ -20,7 +20,7 @@ AP_IFACE="wlan0"        # WiFi interface used as AP (internal hotspot)
 WAN_IFACE="eth0"        # LAN port = uplink from ISP router/switch
 
 AP_SSID="PiGateway"
-AP_PASS="SuperSecret99"   # ← Change this!
+AP_PASS="SuperSecret99"   # ← CHANGE THIS before production deployment!
 AP_CHANNEL=6
 AP_IP="192.168.50.1"
 AP_SUBNET="192.168.50.0/24"
@@ -203,12 +203,15 @@ systemctl unmask hostapd
 systemctl enable hostapd dnsmasq warp-svc
 ok "Services enabled"
 
-# ── Install systemd units (created by next script) ───────
+# ── Done ───────────────────────────────────────────────────
 info "Done! Run 02_configure.sh to deploy dashboard & bot."
 echo ""
 echo -e "${GREEN}======================================${NC}"
 echo -e "${GREEN}  Pi Gateway base install complete!   ${NC}"
 echo -e "${GREEN}======================================${NC}"
+echo ""
+echo -e "${YELLOW}⚠ WARNING: Default AP password is set!${NC}"
+echo -e "${YELLOW}  Edit AP_PASS in 01_install.sh before production use.${NC}"
 echo ""
 echo "  AP SSID   : $AP_SSID"
 echo "  AP Pass   : $AP_PASS"
