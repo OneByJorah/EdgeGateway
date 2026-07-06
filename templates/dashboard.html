@@ -170,9 +170,20 @@ function renderLeases(leases) {
     tbody.innerHTML = '<tr><td colspan="3" class="empty">No clients connected</td></tr>';
     return;
   }
-  tbody.innerHTML = leases.map(l =>
-    `<tr><td>${l.ip}</td><td>${l.mac}</td><td>${l.name || '*'}</td></tr>`
-  ).join('');
+  tbody.innerHTML = '';
+  for (const l of leases) {
+    const tr = document.createElement('tr');
+    const tdIp = document.createElement('td');
+    tdIp.textContent = l.ip || '*';
+    const tdMac = document.createElement('td');
+    tdMac.textContent = l.mac || '*';
+    const tdName = document.createElement('td');
+    tdName.textContent = l.name || '*';
+    tr.appendChild(tdIp);
+    tr.appendChild(tdMac);
+    tr.appendChild(tdName);
+    tbody.appendChild(tr);
+  }
 }
 
 async function api(endpoint, method='POST') {

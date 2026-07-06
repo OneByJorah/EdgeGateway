@@ -32,6 +32,17 @@
 
 ## 🚀 Quick Start
 
+### Requirements
+
+- **Raspberry Pi** (3B+, 4B, or 5) running **Raspberry Pi OS** (Debian-based)
+- **Root access** — both scripts must run with `sudo`
+- **Cloudflare WARP client** — the install script adds the Cloudflare apt repo automatically
+- **Ethernet WAN uplink** on `eth0` (LAN cable from ISP router)
+- **WiFi chipset** supporting AP mode (built-in on Pi 3B+/4/5, or USB adapter)
+- **Telegram Bot Token** (optional, for bot functionality) — create via [@BotFather](https://t.me/BotFather)
+
+> ⚠️ **IMPORTANT**: Before running the installer, edit `01_install.sh` and change the default AP password (`AP_PASS="SuperSecret99"`). The default is a placeholder and MUST be changed for any production or public deployment.
+
 ```bash
 git clone https://github.com/OneByJorah/EdgeGateway.git
 cd EdgeGateway
@@ -59,9 +70,9 @@ sudo ./02_configure.sh
 After installation, open the status dashboard:
 
 ```bash
-# The dashboard is served on port 8080
+# The dashboard is served on port 5000
 # Open in your browser:
-# http://<raspberry-pi-ip>:8080
+# http://<raspberry-pi-ip>:5000
 ```
 
 ## 📁 Project Structure

@@ -140,7 +140,7 @@ ok "Stats helper ready"
 # ── Flask Dashboard ───────────────────────────────────────
 info "Deploying dashboard..."
 cat > $APP_DIR/dashboard.py <<'DASHBOARD'
-import os, json, subprocess, time
+import os, json, subprocess, time, ipaddress
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
 import threading
@@ -151,7 +151,7 @@ socketio = SocketIO(app, cors_allowed_origins=[], async_mode="eventlet")
 PORT = int(os.environ.get("DASHBOARD_PORT", 5000))
 
 # Restrict API endpoints to AP subnet by default
-AP_SUBNET = os.environ.get("AP_SUBNET", "192.168.50.0/24")
+AP_SUBNET = ipaddress.ip_network(os.environ.get("AP_SUBNET", "192.168.50.0/24"), strict=False)
 
 def get_stats():
     try:
@@ -177,9 +177,8 @@ def restrict_subnet():
     """Optional: restrict write operations to AP subnet."""
     # Allow all GET requests; restrict POST to AP subnet only
     if request.method == "POST":
-        client_ip = request.remote_addr
-        # Check if client is in AP subnet (simple prefix check for /24)
-        if not client_ip.startswith(AP_SUBNET.rsplit(".", 1)[0] + "."):
+        client_ip = ipaddress.ip_address(request.remote_addr)
+        if client_ip not in AP_SUBNET:
             return jsonify({"error": "Forbidden: not on AP subnet"}), 403
 
 @app.route("/")

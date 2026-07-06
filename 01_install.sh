@@ -20,7 +20,7 @@ AP_IFACE="wlan0"        # WiFi interface used as AP (internal hotspot)
 WAN_IFACE="eth0"        # LAN port = uplink from ISP router/switch
 
 AP_SSID="PiGateway"
-AP_PASS="SuperSecret99"   # ← Change this!
+AP_PASS="SuperSecret99"   # ← CHANGE THIS before production deployment!
 AP_CHANNEL=6
 AP_IP="192.168.50.1"
 AP_SUBNET="192.168.50.0/24"
@@ -85,16 +85,13 @@ ok "Cloudflare WARP installed"
 info "Setting up Python environment..."
 python3 -m venv /opt/EdgeGateway/venv
 /opt/EdgeGateway/venv/bin/pip install -q --upgrade pip
-/opt/EdgeGateway/venv/bin/pip install -q \
-    flask flask-socketio \
-    python-telegram-bot==20.8 \
-    psutil requests \
-    gunicorn eventlet
+/opt/EdgeGateway/venv/bin/pip install -q -r /opt/EdgeGateway/requirements.txt
 ok "Python environment ready"
 
 # ── Copy app files ────────────────────────────────────────
 info "Installing gateway app files..."
 mkdir -p /opt/EdgeGateway/{templates,static}
+cp requirements.txt /opt/EdgeGateway/requirements.txt
 # (Files will be copied by 02_configure.sh)
 
 # ── Enable IP forwarding ──────────────────────────────────
@@ -166,6 +163,11 @@ iptables -F
 iptables -t nat -F
 iptables -X
 
+# Default deny
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
 # Allow loopback
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
@@ -203,12 +205,15 @@ systemctl unmask hostapd
 systemctl enable hostapd dnsmasq warp-svc
 ok "Services enabled"
 
-# ── Install systemd units (created by next script) ───────
+# ── Done ───────────────────────────────────────────────────
 info "Done! Run 02_configure.sh to deploy dashboard & bot."
 echo ""
 echo -e "${GREEN}======================================${NC}"
 echo -e "${GREEN}  Pi Gateway base install complete!   ${NC}"
 echo -e "${GREEN}======================================${NC}"
+echo ""
+echo -e "${YELLOW}⚠ WARNING: Default AP password is set!${NC}"
+echo -e "${YELLOW}  Edit AP_PASS in 01_install.sh before production use.${NC}"
 echo ""
 echo "  AP SSID   : $AP_SSID"
 echo "  AP Pass   : $AP_PASS"
