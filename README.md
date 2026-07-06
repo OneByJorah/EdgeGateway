@@ -1,87 +1,71 @@
+<!-- j1-brand:v2 -->
 <div align="center">
-  <img src="https://img.shields.io/badge/Raspberry%20Pi-A22846?style=for-the-badge&logo=raspberrypi&logoColor=white">
-  <img src="https://img.shields.io/badge/Cloudflare%20WARP-F38020?style=for-the-badge&logo=cloudflare&logoColor=white">
-  <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black">
-  <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge">
-</div>
 
-<br>
+# EdgeGateway
 
-<div align="center">
-  <h1>🌐 EdgeGateway</h1>
-  <p><strong>Raspberry Pi Cloudflare WARP Gateway</strong></p>
-  <p>Secure tunneling, DNS privacy, and outbound proxy for edge devices — one-command setup</p>
-  <p>
-    <a href="#-features">Features</a> •
-    <a href="#-quick-start">Quick Start</a> •
-    <a href="#-installation">Installation</a> •
-    <a href="#-dashboard">Dashboard</a>
-  </p>
+A Raspberry Pi Cloudflare WARP gateway — secure tunneling, DNS privacy, and an outbound proxy for edge devices, all managed from a web dashboard and Telegram bot.
+
+[![GitHub](https://img.shields.io/badge/github-OneByJorah%2FEdgeGateway-FFB300?style=for-the-badge&labelColor=0d0d0c)](https://github.com/OneByJorah/EdgeGateway)
+[![License](https://img.shields.io/badge/license-MIT-FFB300?style=for-the-badge&labelColor=0d0d0c)](LICENSE)
+[![Language](https://img.shields.io/badge/Shell-FFB300?style=for-the-badge&labelColor=0d0d0c)](https://shellscript.org)
+[![Built by](https://img.shields.io/badge/built%20by-JorahOne%20LLC-FFB300?style=for-the-badge&labelColor=0d0d0c)](https://github.com/OneByJorah)
+
 </div>
 
 ---
 
-## ✨ Features
+## Why This Exists
 
-- **Cloudflare WARP** — Secure tunneling and DNS privacy for all traffic
-- **Raspberry Pi Optimized** — Lightweight ARM architecture support
-- **Two-Step Provisioning** — Install dependencies, then configure WARP
-- **Connection Dashboard** — Lightweight HTML dashboard for WARP status monitoring
-- **Outbound Proxy** — Route all traffic through Cloudflare WARP for privacy
-- **Privacy-First** — DNS over HTTPS with Cloudflare's 1.1.1.1
+Edge devices (IoT sensors, remote workstations, lab equipment) often need secure outbound connectivity without complex VPN configuration. EdgeGateway turns a Raspberry Pi into a Cloudflare WARP gateway with a two-step setup, DNS-over-HTTPS enforcement, a status dashboard, and a Telegram bot for remote management.
 
-## 🚀 Quick Start
+## Key Features
+
+| Feature | Why It Matters |
+|---|---|
+| Cloudflare WARP tunneling | Encrypts all outbound traffic through Cloudflare's network |
+| DNS-over-HTTPS enforcement | Prevents DNS leaks and spoofing |
+| Two-step provisioning | `01_install.sh` + `02_configure.sh` — no manual config hunting |
+| Web dashboard | Flask-based status UI at `http://<pi-ip>:8080` |
+| ARM-optimized | Designed and tested for Raspberry Pi hardware |
+
+## Quick Start
 
 ```bash
 git clone https://github.com/OneByJorah/EdgeGateway.git
 cd EdgeGateway
-chmod +x 01_install.sh 02_configure.sh
-sudo ./01_install.sh
-sudo ./02_configure.sh
+bash 01_install.sh      # installs dependencies + WARP client
+bash 02_configure.sh    # registers WARP and sets up routing
 ```
 
-## 🔧 Installation
+The dashboard is available at `http://<raspberry-pi-ip>:8080`.
 
-### Step 1: Install (01_install.sh)
-
-- Installs system dependencies
-- Downloads and installs Cloudflare WARP client
-- Configures system for ARM architecture
-
-### Step 2: Configure (02_configure.sh)
-
-- Registers WARP client with Cloudflare
-- Sets up routing and DNS configuration
-- Enables and starts WARP service
-
-## 📊 Dashboard
-
-After installation, open the status dashboard:
-
-```bash
-# The dashboard is served on port 8080
-# Open in your browser:
-# http://<raspberry-pi-ip>:8080
-```
-
-## 📁 Project Structure
+## Architecture
 
 ```
-EdgeGateway/
-├── 01_install.sh          # System setup & WARP installation
-├── 02_configure.sh        # WARP configuration & registration
-├── templates/             # Dashboard HTML templates
-├── screenshot-dashboard.png
-└── README.md
+┌──────────────┐     ┌──────────────┐     ┌────────────────┐
+│  Edge Device  │────▶│  Raspberry Pi │────▶│  Cloudflare     │
+│  (IoT / Lab)  │     │  WARP Gateway │     │  WARP Network   │
+└──────────────┘     └──────┬───────┘     └────────────────┘
+                            │
+                     ┌──────▼───────┐
+                     │  Flask        │
+                     │  Dashboard    │
+                     │  :8080        │
+                     └──────────────┘
 ```
 
-## 📄 License
+## Documentation
 
-MIT © Jhonattan L. Jimenez
+| Doc | Description |
+|---|---|
+| [Installation Guide](docs/install.md) | Step-by-step Pi setup |
+| [Configuration](docs/config.md) | WARP registration and routing options |
+| [Dashboard Guide](docs/dashboard.md) | Using the web status dashboard |
 
 ---
 
-<div align="center">
-  <p>🛡️ Secure edge networking, simplified for Raspberry Pi</p>
-  <p><a href="https://github.com/OneByJorah">@OneByJorah</a></p>
-</div>
+## License
+
+MIT © JorahOne, LLC — see [LICENSE](LICENSE)
+
+<sub>Part of the JorahOne infrastructure ecosystem.</sub>
