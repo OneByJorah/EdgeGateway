@@ -166,6 +166,11 @@ iptables -F
 iptables -t nat -F
 iptables -X
 
+# Default deny
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
 # Allow loopback
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
