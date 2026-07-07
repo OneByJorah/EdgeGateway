@@ -1,0 +1,6 @@
+# EdgeGateway — Python dependencies (dashboard only)
+flask==3.0.0
+flask-socketio==5.3.6
+gunicorn==21.2.0
+eventlet==0.35.1
+requests==2.31.0
