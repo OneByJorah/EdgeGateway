@@ -21,6 +21,10 @@
 
 ---
 
+## 📸 Screenshot
+
+This is a CLI/backend-only tool. No screenshots available.
+
 ## ✨ Features
 
 - **Cloudflare WARP** — Secure tunneling and DNS privacy for all traffic
