@@ -8,7 +8,7 @@
 <br>
 
 <div align="center">
-  <h1>🌐 EdgeGateway</h1>
+  <h1>🌐 WarpGate</h1>
   <p><strong>Raspberry Pi Cloudflare WARP Gateway</strong></p>
   <p>Secure tunneling, DNS privacy, and outbound proxy for edge devices — one-command setup</p>
   <p>
@@ -37,8 +37,8 @@ This is a CLI/backend-only tool. No screenshots available.
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/OneByJorah/EdgeGateway.git
-cd EdgeGateway
+git clone https://github.com/OneByJorah/WarpGate.git
+cd WarpGate
 chmod +x 01_install.sh 02_configure.sh
 sudo ./01_install.sh
 sudo ./02_configure.sh
@@ -71,7 +71,7 @@ After installation, open the status dashboard:
 ## 📁 Project Structure
 
 ```
-EdgeGateway/
+WarpGate/
 ├── 01_install.sh          # System setup & WARP installation
 ├── 02_configure.sh        # WARP configuration & registration
 ├── templates/             # Dashboard HTML templates
@@ -81,7 +81,7 @@ EdgeGateway/
 
 ## 📄 License
 
-MIT © Jhonattan L. Jimenez
+MIT © Jhonattan L. Jimenez / JorahOne LLC
 
 ---
 
